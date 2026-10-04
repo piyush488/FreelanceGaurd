@@ -1,0 +1,26 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Environment variables & secrets
+.env
+
+# SQLite Database
+instance/
+*.db
+*.sqlite3
+
+# Google OAuth tokens and credentials
+token.json
+client_secrets.json
+credentials.json
+
+# IDE config
+.vscode/
+.idea/

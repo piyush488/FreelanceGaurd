@@ -1,0 +1,1739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FreelanceGuard | AI-Assisted Freelance Escrow & Invoice Platform</title>
+  <link rel="stylesheet" href="static/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    /* Clean Strict 1-Page Print Styles for Invoice */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 1cm;
+      }
+      html, body {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        font-size: 11pt !important;
+        height: auto !important;
+        min-height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+      }
+      /* Hide all background website elements to prevent page height stretching */
+      .navbar, .footer, .container, #flashContainer, #singlePageApp, .no-print, button, .custom-modal:not(#invoiceModalOverlay) {
+        display: none !important;
+      }
+      #invoiceModalOverlay {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: auto !important;
+        background: transparent !important;
+        backdrop-filter: none !important;
+        padding: 0 !important;
+        margin: 0 auto !important;
+        overflow: visible !important;
+      }
+      #invoiceModal {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 auto !important;
+        padding: 1.5rem 1.75rem !important;
+        box-shadow: none !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 8px !important;
+        page-break-inside: avoid !important;
+        page-break-after: avoid !important;
+        page-break-before: avoid !important;
+      }
+    }
+    .custom-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(4px);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      overflow-y: auto;
+    }
+    .custom-modal.active {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Master Navigation Bar -->
+  <nav class="navbar">
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+      <a href="javascript:void(0)" onclick="switchTab('client')" class="brand" style="text-decoration: none; display: flex; align-items: center; gap: 0.6rem;">
+        <div class="brand-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+        </div>
+        <span style="font-weight: 800; font-size: 1.25rem; letter-spacing: -0.02em; color: #0f172a;">Freelance<span style="color: #2563eb;">Guard</span></span>
+      </a>
+    </div>
+
+    <!-- Center Workspace Tabs -->
+    <div class="tab-navigation">
+      <button type="button" class="nav-tab-btn active" id="tabBtnClient" onclick="switchTab('client')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.4rem;"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+        <span>Client Workspace</span>
+      </button>
+      <button type="button" class="nav-tab-btn" id="tabBtnFreelancer" onclick="switchTab('freelancer')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.4rem;"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+        <span>Freelancer Workspace</span>
+      </button>
+      <button type="button" class="nav-tab-btn" id="tabBtnEscrow" onclick="switchTab('escrow')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.4rem;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+        <span>Escrow & Invoices</span>
+      </button>
+    </div>
+
+    <!-- Right Controls: Notifications -->
+    <div style="display: flex; align-items: center; gap: 0.85rem;">
+      <div style="position: relative;" id="notifContainer">
+        <button type="button" id="notifBellBtn" onclick="toggleNotifications()" title="Notifications"
+                style="position: relative; background: #ffffff; border: 1px solid #e2e8f0; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; box-shadow: var(--shadow-xs); outline: none;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+          <span id="notifBadge" style="position: absolute; top: -4px; right: -4px; background: #ef4444; color: white; border-radius: 9999px; font-size: 0.65rem; font-weight: 700; min-width: 18px; height: 18px; display: none; align-items: center; justify-content: center; padding: 0 4px; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.15);">0</span>
+        </button>
+
+        <!-- Notification Dropdown Panel -->
+        <div id="notifDropdown" style="display: none; position: absolute; right: 0; top: calc(100% + 10px); width: 380px; background: #ffffff; border-radius: var(--radius-md); box-shadow: var(--shadow-lg); border: 1px solid var(--border-color); z-index: 1000; overflow: hidden;">
+          <div style="padding: 0.85rem 1.1rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="font-weight: 700; font-size: 0.9rem; color: #0f172a;">Notifications</span>
+              <span id="notifDropdownCount" style="background: #f1f5f9; color: #475569; font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.55rem; border-radius: 9999px; border: 1px solid #e2e8f0;">0 unread</span>
+            </div>
+            <button type="button" onclick="clearAllNotifications(event)" style="background: transparent; border: none; color: #2563eb; font-size: 0.76rem; font-weight: 600; cursor: pointer; text-decoration: none; padding: 0.2rem 0.4rem; border-radius: 4px;">Mark all read</button>
+          </div>
+
+          <div id="notifList" style="max-height: 320px; overflow-y: auto;">
+            <!-- Populated dynamically via JS -->
+          </div>
+
+          <div style="padding: 0.6rem 1rem; background: #f8fafc; border-top: 1px solid var(--border-color); text-align: center;">
+            <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 500;">Real-time Smart Escrow Activity Feed</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Flash Messages Container -->
+  <div class="container">
+    <div id="flashContainer" class="flash-container"></div>
+
+    <!-- MAIN SINGLE PAGE APPLICATION APP -->
+    <div id="singlePageApp">
+
+      <!-- =========================================================================
+           TAB 1: CLIENT WORKSPACE
+           ========================================================================= -->
+      <div id="tabSection-client" class="workspace-tab-content">
+        <!-- Top Action Row -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+              <h1 style="font-size: 1.75rem; font-weight: 800; color: #0f172a; letter-spacing: -0.02em;">Client Workspace</h1>
+              <span class="badge badge-client">Client Dashboard</span>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Post requirements with Gemini AI, manage active contracts, and release verified escrow milestones.</p>
+          </div>
+
+          <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <button type="button" class="btn btn-primary" onclick="toggleProjectForm()" id="btnToggleProjectForm" style="font-size: 0.9rem; padding: 0.65rem 1.3rem;">
+              <span>+ Post Project with AI</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- COLLAPSIBLE PROJECT POSTING FORM WITH AI -->
+        <div id="createProjectCard" class="card" style="display: none; margin-bottom: 2rem; border: 1px solid var(--border-color); background: #ffffff; box-shadow: var(--shadow-md);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+            <div>
+              <h2 style="font-size: 1.25rem; font-weight: 800; color: #0f172a;">Post Project with Gemini AI Analysis</h2>
+              <p style="font-size: 0.85rem; color: var(--text-muted);">Enter your raw requirements and let AI parse deliverables and milestones automatically.</p>
+            </div>
+            <button type="button" onclick="toggleProjectForm()" style="background: #f1f5f9; border: 1px solid #e2e8f0; width: 32px; height: 32px; border-radius: 6px; font-size: 1.2rem; color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
+          </div>
+
+          <form id="createProjectForm" onsubmit="handleCreateProject(event)">
+            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+              <div>
+                <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.35rem; color: #334155;">Project Title</label>
+                <input type="text" id="projectTitle" required placeholder="e.g. Modern Escrow Market Website" style="width: 100%; padding: 0.65rem 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.9rem; outline: none;">
+              </div>
+              <div>
+                <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.35rem; color: #334155;">Budget (₹)</label>
+                <input type="number" id="projectBudget" required min="500" step="100" placeholder="e.g. 10000" style="width: 100%; padding: 0.65rem 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.9rem; outline: none;">
+              </div>
+              <div>
+                <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.35rem; color: #334155;">Deadline</label>
+                <input type="date" id="projectDeadline" required style="width: 100%; padding: 0.65rem 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.9rem; outline: none;">
+              </div>
+            </div>
+
+            <div style="margin-bottom: 1.25rem;">
+              <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.35rem; color: #334155;">Raw Project Requirements & Scope *</label>
+              <textarea id="projectDescription" rows="3" required placeholder="Describe what you want built. Gemini AI will parse this into structured deliverables and milestones..." style="width: 100%; padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.88rem; font-family: inherit; outline: none;"></textarea>
+            </div>
+
+            <!-- AI Trigger Button -->
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; background: #f8fafc; padding: 0.85rem 1.25rem; border-radius: var(--radius-sm); border: 1px solid #e2e8f0;">
+              <div>
+                <span style="font-size: 0.88rem; font-weight: 700; color: #0f172a;">Automated AI Milestone Breakdown</span>
+                <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0;">Analyze scope and calculate optimal milestone splits automatically.</p>
+              </div>
+              <button type="button" id="btnAnalyzeAI" onclick="runAIAnalysis()" class="btn btn-primary" style="padding: 0.5rem 1.2rem; font-size: 0.84rem;">
+                <span>✨ Analyze with AI</span>
+              </button>
+            </div>
+            <div id="aiStatusMessage" style="display: none; font-size: 0.85rem; font-weight: 600; margin-bottom: 1rem;"></div>
+
+            <!-- Dynamic Requirements Container -->
+            <div style="margin-bottom: 1.5rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                <label style="font-size: 0.88rem; font-weight: 700; color: #0f172a;">Key Functional Deliverables</label>
+                <button type="button" onclick="addRequirementRow()" class="btn btn-secondary" style="padding: 0.35rem 0.85rem; font-size: 0.8rem;">+ Add Requirement</button>
+              </div>
+              <div id="requirementsContainer" style="display: flex; flex-direction: column; gap: 0.6rem;">
+                <div class="req-row" style="display: flex; gap: 0.5rem; align-items: center;">
+                  <input type="text" class="req-input" placeholder="Enter deliverable (or click 'Analyze with AI')..." style="flex: 1; padding: 0.65rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.88rem;">
+                  <button type="button" onclick="this.parentElement.remove()" style="background: none; border: none; color: var(--danger); font-size: 1.2rem; cursor: pointer; padding: 0 0.5rem;">&times;</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Dynamic Milestones Container -->
+            <div style="margin-bottom: 1.5rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                <div>
+                  <label style="font-size: 0.88rem; font-weight: 700; color: #0f172a;">Structured Milestones</label>
+                  <span style="font-size: 0.76rem; color: var(--text-muted); margin-left: 0.4rem;">(Optional - will auto-generate if left blank)</span>
+                </div>
+                <button type="button" onclick="addMilestoneRow()" class="btn btn-secondary" style="padding: 0.35rem 0.85rem; font-size: 0.8rem;">+ Add Milestone</button>
+              </div>
+              <div id="milestonesContainer" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <!-- Milestones dynamically appended here -->
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+              <button type="button" class="btn btn-secondary" onclick="toggleProjectForm()">Cancel</button>
+              <button type="submit" class="btn btn-primary" style="padding: 0.65rem 1.75rem;">
+                Post Project & Open for Bids
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- ESCROW VAULT BANNER (TOP HERO) -->
+        <div id="clientEscrowBanner"></div>
+
+        <!-- 2-COLUMN LAYOUT: MANAGE PROJECTS & METRICS -->
+        <div class="client-manage-layout">
+          <!-- Left Column: Manage All Projects Hub -->
+          <div class="manage-projects-hub">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <h2 style="font-size: 1.25rem; font-weight: 800; color: #0f172a;">Manage All Projects & Contracts</h2>
+                  <span id="clientProjectBadgeCount" class="badge badge-client">0 Projects</span>
+                </div>
+                <p style="font-size: 0.86rem; color: var(--text-muted); margin-top: 0.15rem;">Select any project to review deliverables, fund escrow, or track milestone progress.</p>
+              </div>
+            </div>
+            <div id="clientProjectGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem;"></div>
+          </div>
+
+          <!-- Right Column: Vertical Metric Stack -->
+          <div style="display: flex; flex-direction: column; gap: 0.75rem; justify-content: space-between;">
+            <div class="metric-card metric-indigo" style="flex: 1; display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <div style="font-size: 0.72rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">Total Projects</div>
+                <div id="metricTotalProjects" style="font-size: 1.65rem; font-weight: 800; color: #0f172a; margin-top: 0.1rem;">0</div>
+              </div>
+              <div style="width: 40px; height: 40px; border-radius: 10px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+              </div>
+            </div>
+
+            <div class="metric-card metric-amber" style="flex: 1; display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <div style="font-size: 0.72rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">Active Contracts</div>
+                <div id="metricActiveProjects" style="font-size: 1.65rem; font-weight: 800; color: #0f172a; margin-top: 0.1rem;">0</div>
+              </div>
+              <div style="width: 40px; height: 40px; border-radius: 10px; background: #fffbeb; color: #d97706; display: flex; align-items: center; justify-content: center;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              </div>
+            </div>
+
+            <div class="metric-card metric-emerald" style="flex: 1; display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <div style="font-size: 0.72rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">Completed</div>
+                <div id="metricCompletedProjects" style="font-size: 1.65rem; font-weight: 800; color: #0f172a; margin-top: 0.1rem;">0</div>
+              </div>
+              <div style="width: 40px; height: 40px; border-radius: 10px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+              </div>
+            </div>
+
+            <div class="metric-card metric-cyan" style="flex: 1; display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <div style="font-size: 0.72rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">Escrow Committed</div>
+                <div id="metricEscrowSpent" style="font-size: 1.65rem; font-weight: 800; color: #0f172a; margin-top: 0.1rem;">₹0</div>
+              </div>
+              <div style="width: 40px; height: 40px; border-radius: 10px; background: #f0f9ff; color: #0284c7; display: flex; align-items: center; justify-content: center;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACTIVE PROJECT DETAIL & DELIVERABLE REVIEW WORKSPACE -->
+        <div id="clientActiveWorkspaceArea"></div>
+      </div>
+
+      <!-- =========================================================================
+           TAB 2: FREELANCER WORKSPACE
+           ========================================================================= -->
+      <div id="tabSection-freelancer" class="workspace-tab-content" style="display: none;">
+        <!-- Top Action Row -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+              <h1 style="font-size: 1.75rem; font-weight: 800; color: #0f172a; letter-spacing: -0.02em;">Freelancer Workspace</h1>
+              <span class="badge badge-freelancer">Freelancer Dashboard</span>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Accept verified client contracts, submit milestone deliverables, and receive guaranteed 90% net payouts.</p>
+          </div>
+
+          <!-- Net Earnings Box -->
+          <div style="background: #ffffff; border: 1px solid #a7f3d0; border-radius: var(--radius-sm); padding: 0.75rem 1.4rem; text-align: right; box-shadow: var(--shadow-xs); border-left: 4px solid #059669;">
+            <div style="font-size: 0.72rem; font-weight: 700; color: #065f46; text-transform: uppercase; letter-spacing: 0.04em;">Total Net Released Earnings (90%)</div>
+            <div id="freelancerTotalEarnings" style="font-size: 1.5rem; font-weight: 800; color: #059669;">₹0.00</div>
+          </div>
+        </div>
+
+        <!-- Escrow Notice Banner -->
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #d97706; border-radius: var(--radius-sm); padding: 0.85rem 1.15rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem; box-shadow: var(--shadow-xs);">
+          <div style="width: 32px; height: 32px; border-radius: 8px; background: #fffbeb; color: #d97706; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          </div>
+          <div>
+            <strong style="color: #0f172a; font-size: 0.88rem;">Escrow Protection Protocol:</strong>
+            <span style="color: #475569; font-size: 0.84rem;"> Accept contracts where client funds simulated escrow. Submitting verified deliverables unlocks 90% net payouts instantly upon approval.</span>
+          </div>
+        </div>
+
+        <!-- Freelancer Hub: My Contracts & Open Projects -->
+        <div class="freelancer-manage-layout">
+          <!-- Left Column: My Active & Completed Contracts -->
+          <div class="manage-projects-hub" style="display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <h2 style="font-size: 1.25rem; font-weight: 800; color: #0f172a;">My Active & Completed Contracts</h2>
+                  <span id="freelancerMyContractsBadge" class="badge badge-freelancer">0 Contracts</span>
+                </div>
+                <p style="font-size: 0.86rem; color: var(--text-muted); margin-top: 0.15rem;">Click 'Manage / Submit' to switch contracts and submit deliverables.</p>
+              </div>
+            </div>
+            <div id="freelancerMyContractsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem;"></div>
+          </div>
+
+          <!-- Right Column: Open Projects for Acceptance -->
+          <div class="card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid #bfdbfe; background: #ffffff;">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem;">
+                <div style="display: flex; align-items: center; gap: 0.45rem;">
+                  <div style="width: 28px; height: 28px; border-radius: 7px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                  </div>
+                  <h2 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0;">Open Projects</h2>
+                </div>
+                <span id="freelancerOpenBadge" class="badge badge-open">0 Open</span>
+              </div>
+              <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.9rem;">Verified client contracts open for acceptance.</p>
+              <div id="freelancerOpenProjectsList" style="display: flex; flex-direction: column; gap: 0.85rem; max-height: 420px; overflow-y: auto; padding-right: 0.2rem;"></div>
+            </div>
+
+            <div style="padding-top: 0.85rem; border-top: 1px solid var(--border-color); margin-top: 1rem; display: flex; justify-content: space-between; font-size: 0.76rem; color: var(--text-muted);">
+              <span>Escrow Guarantee:</span>
+              <strong style="color: #059669;">90% Net Release</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Contract Workspace for Freelancer -->
+        <div id="freelancerActiveWorkspaceArea"></div>
+      </div>
+
+      <!-- =========================================================================
+           TAB 3: ESCROW VAULT & DIGITAL INVOICES
+           ========================================================================= -->
+      <div id="tabSection-escrow" class="workspace-tab-content" style="display: none;">
+        <!-- Top Action Row -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+              <h1 style="font-size: 1.75rem; font-weight: 800; color: #0f172a; letter-spacing: -0.02em;">Simulated Escrow Vault & Invoices</h1>
+              <span class="badge badge-funded">Financial Ledger</span>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Automated 10% platform fee calculation, 90% net freelancer payouts, and digital invoice generation.</p>
+          </div>
+        </div>
+
+        <!-- Escrow Formula Card -->
+        <div class="escrow-vault-card" style="margin-bottom: 2rem;">
+          <h2 style="font-size: 1.25rem; font-weight: 800; color: white; margin-bottom: 0.4rem;">The 10% Escrow Mathematical Protocol</h2>
+          <p style="color: #94a3b8; font-size: 0.88rem; margin-bottom: 1.25rem; line-height: 1.5;">
+            Upon milestone approval, the platform automatically executes the escrow split:
+            <code style="background: rgba(255,255,255,0.1); padding: 0.2rem 0.5rem; border-radius: 4px; color: #4ade80; font-weight: 600;">Freelancer Net = Gross × 0.90</code> and
+            <code style="background: rgba(255,255,255,0.1); padding: 0.2rem 0.5rem; border-radius: 4px; color: #fbbf24; font-weight: 600;">Platform Fee = Gross × 0.10</code>.
+          </p>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+            <div class="escrow-stat-box">
+              <span style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 600;">Total Escrow Committed</span>
+              <strong id="escrowStatCommitted" style="font-size: 1.35rem; color: white; display: block; margin-top: 0.2rem;">₹0.00</strong>
+            </div>
+            <div class="escrow-stat-box">
+              <span style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 600;">Released Net Payouts (90%)</span>
+              <strong id="escrowStatReleased" style="font-size: 1.35rem; color: #4ade80; display: block; margin-top: 0.2rem;">₹0.00</strong>
+            </div>
+            <div class="escrow-stat-box">
+              <span style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 600;">Platform Fee Retained (10%)</span>
+              <strong id="escrowStatFee" style="font-size: 1.35rem; color: #fbbf24; display: block; margin-top: 0.2rem;">₹0.00</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Generated Invoices List -->
+        <div class="card" style="margin-bottom: 2rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+            <h2 style="font-size: 1.25rem; font-weight: 800; color: #0f172a;">Generated Digital Invoices</h2>
+            <span id="escrowInvoicesBadgeCount" class="badge badge-funded">0 Invoices</span>
+          </div>
+          <div id="escrowInvoicesList" style="display: flex; flex-direction: column; gap: 1rem;"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Professional Clean Footer -->
+  <footer class="footer">
+    <div style="display: flex; justify-content: space-between; align-items: center; max-width: 1480px; margin: 0 auto; width: 95%; flex-wrap: wrap; gap: 0.75rem;">
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <span style="font-weight: 800; color: #0f172a; font-size: 0.9rem;">FreelanceGuard</span>
+        <span style="color: #cbd5e1;">•</span>
+        <span style="color: #64748b; font-size: 0.82rem;">Simulated AI Escrow & Milestone Smart Contracts</span>
+      </div>
+      <div style="font-size: 0.82rem; color: #94a3b8;">
+        <span>All-in-One Client & Freelancer Workspace</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- =========================================================================
+       MODALS: INVOICE MODAL & REVISION MODAL
+       ========================================================================= -->
+  <!-- Invoice Printable Modal -->
+  <div id="invoiceModalOverlay" class="custom-modal">
+    <div id="invoiceModal" style="background: white; border-radius: var(--radius-lg); max-width: 780px; width: 100%; padding: 2rem; box-shadow: var(--shadow-lg); border: 1px solid var(--border-color); position: relative;">
+      <div class="no-print" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #e2e8f0;">
+        <button type="button" onclick="closeInvoiceModal()" class="btn btn-secondary" style="padding: 0.45rem 1rem; font-size: 0.85rem;">
+          &larr; Close
+        </button>
+        <button type="button" onclick="window.print()" class="btn btn-primary" style="padding: 0.5rem 1.4rem; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 0.4rem;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+          Print / Save as PDF
+        </button>
+      </div>
+
+      <div id="invoiceModalContent"></div>
+    </div>
+  </div>
+
+  <!-- Revision Modal -->
+  <div id="revisionModalOverlay" class="custom-modal">
+    <div style="background: white; border-radius: var(--radius-md); max-width: 500px; width: 100%; padding: 1.75rem; box-shadow: var(--shadow-lg); border: 1px solid var(--border-color);">
+      <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.4rem; color: #0f172a;">Request Deliverable Revision</h3>
+      <p id="revisionModalTitle" style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1.25rem;"></p>
+      <form onsubmit="handleSendRevision(event)">
+        <input type="hidden" id="revisionMilestoneId">
+        <textarea id="revisionNote" rows="4" required placeholder="Explain clearly what deliverables need to be revised..." style="width: 100%; padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.9rem; margin-bottom: 1.25rem; font-family: inherit; outline: none;"></textarea>
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <button type="button" class="btn btn-secondary" onclick="closeRevisionModal()">Cancel</button>
+          <button type="submit" class="btn btn-warning" style="font-weight: 700;">Send Revision Request</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       CLIENT-SIDE FULL APP ENGINE (LOCALSTORAGE PERSISTENCE)
+       ========================================================================= -->
+  <script>
+    // Initial Seed Data
+    const INITIAL_DATA = {
+      activeTab: "client",
+      selectedProjectId: "p1",
+      notifications: [
+        { id: 1, title: "Deliverable Ready for Review", message: "Freelancer Piyush submitted deliverable for Phase 1: Authentication & Database Architecture.", time: "10 mins ago", isRead: false },
+        { id: 2, title: "Escrow Locked & Funded", message: "Client funded ₹10,000 for Mobile Food Delivery App.", time: "1 hour ago", isRead: false },
+        { id: 3, title: "Contract Accepted", message: "Piyush accepted Mobile Food Delivery App project contract.", time: "2 hours ago", isRead: true }
+      ],
+      projects: [
+        {
+          id: "p1",
+          title: "Mobile Food Delivery App",
+          budget: 10000,
+          deadline: "2026-10-30",
+          status: "IN_PROGRESS", // OPEN, ACCEPTED, FUNDED, IN_PROGRESS, COMPLETED
+          clientName: "Demo Client",
+          clientEmail: "client@freelanceguard.demo",
+          freelancerName: "Piyush",
+          freelancerEmail: "piyushsrivastava488@gmail.com",
+          freelancerId: "f1",
+          description: "Full-stack online food delivery platform featuring real-time menu catalog, cart, checkout, courier routing, and client billing.",
+          requirements: [
+            "Customer authentication & profile management",
+            "Restaurant catalog with real-time filter & search",
+            "Checkout flow with simulated escrow deposit",
+            "Admin operations and commission dashboard"
+          ],
+          milestones: [
+            {
+              id: "m1",
+              title: "Phase 1: Architecture & Auth Setup",
+              description: "Database schema, user registration, JWT login, and role enforcement.",
+              amount: 3000,
+              deadline: "2026-10-10",
+              status: "SUBMITTED", // PENDING, IN_PROGRESS, SUBMITTED, REVISION_REQUESTED, RELEASED
+              submissionNote: "Completed project database structure, authentication endpoints, and responsive client navbar. Source code and live demo ready for review.",
+              submissionLink: "https://github.com/piyush-srivastava/food-delivery-demo",
+              invoiceNumber: null
+            },
+            {
+              id: "m2",
+              title: "Phase 2: Restaurant Menu & Cart Engine",
+              description: "Dynamic menu list, order summary, cart state, and checkout validation.",
+              amount: 4000,
+              deadline: "2026-10-20",
+              status: "PENDING",
+              submissionNote: "",
+              submissionLink: "",
+              invoiceNumber: null
+            },
+            {
+              id: "m3",
+              title: "Phase 3: Final Testing & Invoice Release",
+              description: "End-to-end integration, automated invoicing, and deployment readiness.",
+              amount: 3000,
+              deadline: "2026-10-30",
+              status: "PENDING",
+              submissionNote: "",
+              submissionLink: "",
+              invoiceNumber: null
+            }
+          ],
+          activityLogs: [
+            { action: "Deliverable Submitted", description: "Piyush submitted Phase 1 for client review", time: "10m ago" },
+            { action: "Escrow Funded", description: "Client funded ₹10,000 into simulated escrow vault", time: "1h ago" },
+            { action: "Contract Accepted", description: "Piyush accepted project contract", time: "2h ago" },
+            { action: "Project Created", description: "Mobile Food Delivery App posted by Demo Client", time: "3h ago" }
+          ]
+        },
+        {
+          id: "p2",
+          title: "FinTech Dashboard with Escrow",
+          budget: 15000,
+          deadline: "2026-11-15",
+          status: "OPEN",
+          clientName: "Demo Client",
+          clientEmail: "client@freelanceguard.demo",
+          freelancerName: null,
+          freelancerEmail: null,
+          freelancerId: null,
+          description: "Executive analytics dashboard displaying transactional escrow volume, fee collection metrics, and dispute resolution workflows.",
+          requirements: [
+            "Chart.js interactive metric widgets",
+            "Escrow ledger table with filters",
+            "Exportable CSV reports"
+          ],
+          milestones: [
+            {
+              id: "m4",
+              title: "Phase 1: Analytics UI & Chart Integration",
+              description: "Design and implement dashboard metrics and revenue trends.",
+              amount: 7500,
+              deadline: "2026-11-05",
+              status: "PENDING",
+              submissionNote: "",
+              submissionLink: "",
+              invoiceNumber: null
+            },
+            {
+              id: "m5",
+              title: "Phase 2: Backend Reports & Ledger",
+              description: "Connect ledger API, CSV export, and tax calculation.",
+              amount: 7500,
+              deadline: "2026-11-15",
+              status: "PENDING",
+              submissionNote: "",
+              submissionLink: "",
+              invoiceNumber: null
+            }
+          ],
+          activityLogs: [
+            { action: "Project Created", description: "FinTech Dashboard posted and opened for bids", time: "5h ago" }
+          ]
+        },
+        {
+          id: "p3",
+          title: "AI Chat Assistant Integration",
+          budget: 8000,
+          deadline: "2026-10-25",
+          status: "COMPLETED",
+          clientName: "Demo Client",
+          clientEmail: "client@freelanceguard.demo",
+          freelancerName: "Piyush",
+          freelancerEmail: "piyushsrivastava488@gmail.com",
+          freelancerId: "f1",
+          description: "Integration of Google Gemini LLM for automated customer support triage.",
+          requirements: [
+            "Gemini API streaming responses",
+            "Session history & memory caching"
+          ],
+          milestones: [
+            {
+              id: "m6",
+              title: "Complete Phase: Gemini Setup & UI Chat",
+              description: "Integrated Gemini 2.5 Flash model with full streaming interface.",
+              amount: 8000,
+              deadline: "2026-10-25",
+              status: "RELEASED",
+              submissionNote: "Deployed Gemini integration on live environment with complete token caching.",
+              submissionLink: "https://github.com/piyush-srivastava/gemini-chat-demo",
+              invoiceNumber: "INV-2026-8801"
+            }
+          ],
+          activityLogs: [
+            { action: "Milestone Approved & Released", description: "Client approved milestone and released ₹7,200 net payout", time: "1d ago" },
+            { action: "Deliverable Submitted", description: "Piyush submitted Gemini integration", time: "1d ago" },
+            { action: "Escrow Funded", description: "Client funded ₹8,000", time: "2d ago" }
+          ]
+        }
+      ],
+      invoices: [
+        {
+          id: "inv1",
+          invoiceNumber: "INV-2026-8801",
+          projectTitle: "AI Chat Assistant Integration",
+          milestoneTitle: "Complete Phase: Gemini Setup & UI Chat",
+          clientName: "Demo Client",
+          clientEmail: "client@freelanceguard.demo",
+          freelancerName: "Piyush",
+          freelancerEmail: "piyushsrivastava488@gmail.com",
+          grossAmount: 8000,
+          platformFee: 800,
+          freelancerAmount: 7200,
+          status: "PAID",
+          createdAt: "2026-10-03"
+        }
+      ]
+    };
+
+    // State Management in LocalStorage (Permanent Persistence)
+    const STORAGE_KEY = "freelanceguard_live_state";
+
+    function getAppData() {
+      // Clear any obsolete test keys
+      localStorage.removeItem("freelanceguard_static_state_v1");
+      localStorage.removeItem("freelanceguard_static_state_v2");
+
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch (e) {}
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_DATA));
+      return INITIAL_DATA;
+    }
+
+    function saveAppData(data) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      renderApp();
+    }
+
+    function showFlash(message, category = "success") {
+      const fc = document.getElementById("flashContainer");
+      if (!fc) return;
+      fc.innerHTML = `
+        <div class="alert alert-${category}" style="display: flex; justify-content: space-between; align-items: center;">
+          <span>${message}</span>
+          <button onclick="this.parentElement.remove()" style="background: none; border: none; font-size: 1.1rem; cursor: pointer; color: inherit;">&times;</button>
+        </div>
+      `;
+      setTimeout(() => {
+        if (fc.firstElementChild) fc.innerHTML = "";
+      }, 5000);
+    }
+
+    // Tab Switcher
+    function switchTab(tabName) {
+      if (!tabName) tabName = "client";
+      const tabs = ["client", "freelancer", "escrow"];
+      tabs.forEach(t => {
+        const sec = document.getElementById("tabSection-" + t);
+        const btn = document.getElementById("tabBtn" + t.charAt(0).toUpperCase() + t.slice(1));
+        if (sec) sec.style.display = (t === tabName) ? "block" : "none";
+        if (btn) {
+          if (t === tabName) btn.classList.add("active");
+          else btn.classList.remove("active");
+        }
+      });
+      const data = getAppData();
+      data.activeTab = tabName;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    // Toggle Post Project Form
+    function toggleProjectForm() {
+      switchTab("client");
+      const card = document.getElementById("createProjectCard");
+      if (card) {
+        const isHidden = card.style.display === "none" || !card.style.display;
+        card.style.display = isHidden ? "block" : "none";
+        if (isHidden) {
+          setTimeout(() => {
+            card.scrollIntoView({ behavior: "smooth", block: "start" });
+            const titleInput = document.getElementById("projectTitle");
+            if (titleInput) titleInput.focus();
+          }, 50);
+        }
+      }
+    }
+
+    // Notification center
+    function toggleNotifications() {
+      const dropdown = document.getElementById("notifDropdown");
+      if (!dropdown) return;
+      const isHidden = dropdown.style.display === "none" || !dropdown.style.display;
+      dropdown.style.display = isHidden ? "block" : "none";
+      if (isHidden) {
+        const data = getAppData();
+        data.notifications.forEach(n => n.isRead = true);
+        saveAppData(data);
+      }
+    }
+
+    function clearAllNotifications(event) {
+      if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+      }
+      const data = getAppData();
+      data.notifications.forEach(n => n.isRead = true);
+      saveAppData(data);
+    }
+
+    // AI Analysis Simulation & Smart Parser
+    function runAIAnalysis() {
+      const desc = document.getElementById("projectDescription").value.trim();
+      const budget = parseFloat(document.getElementById("projectBudget").value) || 5000;
+      const statusMsg = document.getElementById("aiStatusMessage");
+      const btn = document.getElementById("btnAnalyzeAI");
+
+      if (!desc) {
+        alert("Please write a brief project description first.");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = "<span>🤖 Analyzing scope...</span>";
+      statusMsg.style.display = "block";
+      statusMsg.style.color = "#2563eb";
+      statusMsg.innerText = "Gemini AI is parsing functional requirements and calculating milestone splits...";
+
+      setTimeout(() => {
+        // Smart rule-based requirement extraction
+        const sentences = desc.split(/[,.\n;]+/).map(s => s.trim()).filter(s => s.length > 5);
+        const reqs = sentences.length > 0 ? sentences : [
+          "Core system setup and database architecture",
+          "User authentication, profile management, and routing",
+          "Interactive UI workflows and client validation",
+          "Final testing, deployment verification, and invoice release"
+        ];
+
+        // Fill Requirements Container
+        const reqContainer = document.getElementById("requirementsContainer");
+        reqContainer.innerHTML = "";
+        reqs.slice(0, 5).forEach(r => {
+          const div = document.createElement("div");
+          div.className = "req-row";
+          div.style = "display: flex; gap: 0.5rem; align-items: center;";
+          div.innerHTML = `
+            <input type="text" class="req-input" value="${r}" style="flex: 1; padding: 0.65rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.88rem;">
+            <button type="button" onclick="this.parentElement.remove()" style="background: none; border: none; color: var(--danger); font-size: 1.2rem; cursor: pointer; padding: 0 0.5rem;">&times;</button>
+          `;
+          reqContainer.appendChild(div);
+        });
+
+        // Generate 3 Sequential Milestones
+        const m1Amount = Math.round(budget * 0.30);
+        const m2Amount = Math.round(budget * 0.40);
+        const m3Amount = Math.round(budget - m1Amount - m2Amount);
+
+        const today = new Date();
+        const d1 = new Date(today.getTime() + 7 * 86400000).toISOString().split('T')[0];
+        const d2 = new Date(today.getTime() + 15 * 86400000).toISOString().split('T')[0];
+        const d3 = new Date(today.getTime() + 25 * 86400000).toISOString().split('T')[0];
+
+        const milestonesData = [
+          { title: "Phase 1: Architecture & Core Foundations", desc: "Database models, API routes, and wireframe setup.", amount: m1Amount, date: d1 },
+          { title: "Phase 2: Functional Features & Integration", desc: "Main user workflows, components, and state management.", amount: m2Amount, date: d2 },
+          { title: "Phase 3: Testing, Polishing & Handover", desc: "End-to-end verification, responsive styling, and release.", amount: m3Amount, date: d3 }
+        ];
+
+        const mContainer = document.getElementById("milestonesContainer");
+        mContainer.innerHTML = "";
+        milestonesData.forEach(m => {
+          const mBox = document.createElement("div");
+          mBox.className = "milestone-box";
+          mBox.style = "padding: 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-card-subtle);";
+          mBox.innerHTML = `
+            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 0.75rem; align-items: center; margin-bottom: 0.5rem;">
+              <div>
+                <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Milestone Title</label>
+                <input type="text" class="m-title" value="${m.title}" style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.88rem;">
+              </div>
+              <div>
+                <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Amount (₹)</label>
+                <input type="number" class="m-amount" value="${m.amount}" style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.88rem;">
+              </div>
+              <div>
+                <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Deadline</label>
+                <input type="date" class="m-date" value="${m.date}" style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.88rem;">
+              </div>
+              <div style="padding-top: 1rem;">
+                <button type="button" onclick="this.closest('.milestone-box').remove()" style="background: none; border: none; color: var(--danger); font-size: 1.2rem; cursor: pointer;">&times;</button>
+              </div>
+            </div>
+            <div>
+              <input type="text" class="m-desc" value="${m.desc}" placeholder="Deliverable details (optional)" style="width: 100%; padding: 0.55rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.85rem;">
+            </div>
+          `;
+          mContainer.appendChild(mBox);
+        });
+
+        btn.disabled = false;
+        btn.innerHTML = "<span>✨ Analyze with AI</span>";
+        statusMsg.style.color = "#059669";
+        statusMsg.innerText = "✓ AI successfully structured 3 milestones and extracted deliverables!";
+      }, 600);
+    }
+
+    function addRequirementRow() {
+      const container = document.getElementById("requirementsContainer");
+      const div = document.createElement("div");
+      div.className = "req-row";
+      div.style = "display: flex; gap: 0.5rem; align-items: center;";
+      div.innerHTML = `
+        <input type="text" class="req-input" placeholder="Enter key deliverable requirement..." style="flex: 1; padding: 0.65rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.88rem;">
+        <button type="button" onclick="this.parentElement.remove()" style="background: none; border: none; color: var(--danger); font-size: 1.2rem; cursor: pointer; padding: 0 0.5rem;">&times;</button>
+      `;
+      container.appendChild(div);
+    }
+
+    function addMilestoneRow() {
+      const container = document.getElementById("milestonesContainer");
+      const div = document.createElement("div");
+      div.className = "milestone-box";
+      div.style = "padding: 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-card-subtle);";
+      div.innerHTML = `
+        <div style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 0.75rem; align-items: center; margin-bottom: 0.5rem;">
+          <div>
+            <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Milestone Title</label>
+            <input type="text" class="m-title" placeholder="e.g. Phase: Setup & Delivery" style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.88rem;">
+          </div>
+          <div>
+            <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Amount (₹)</label>
+            <input type="number" class="m-amount" placeholder="Amount (₹)" style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.88rem;">
+          </div>
+          <div>
+            <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Deadline</label>
+            <input type="date" class="m-date" style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.88rem;">
+          </div>
+          <div style="padding-top: 1rem;">
+            <button type="button" onclick="this.closest('.milestone-box').remove()" style="background: none; border: none; color: var(--danger); font-size: 1.2rem; cursor: pointer;">&times;</button>
+          </div>
+        </div>
+        <div>
+          <input type="text" class="m-desc" placeholder="Deliverable details (optional)" style="width: 100%; padding: 0.55rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.85rem;">
+        </div>
+      `;
+      container.appendChild(div);
+    }
+
+    // Handle Project Creation
+    function handleCreateProject(e) {
+      e.preventDefault();
+      const title = document.getElementById("projectTitle").value.trim();
+      const budget = parseFloat(document.getElementById("projectBudget").value) || 5000;
+      const deadline = document.getElementById("projectDeadline").value || new Date().toISOString().split('T')[0];
+      const desc = document.getElementById("projectDescription").value.trim();
+
+      const reqInputs = document.querySelectorAll("#requirementsContainer .req-input");
+      const requirements = Array.from(reqInputs).map(i => i.value.trim()).filter(Boolean);
+
+      const mTitles = document.querySelectorAll("#milestonesContainer .m-title");
+      const mAmounts = document.querySelectorAll("#milestonesContainer .m-amount");
+      const mDates = document.querySelectorAll("#milestonesContainer .m-date");
+      const mDescs = document.querySelectorAll("#milestonesContainer .m-desc");
+
+      let milestones = [];
+      for (let i = 0; i < mTitles.length; i++) {
+        if (mTitles[i].value.trim()) {
+          milestones.push({
+            id: "m_" + Date.now() + "_" + i,
+            title: mTitles[i].value.trim(),
+            description: mDescs[i] ? mDescs[i].value.trim() : "",
+            amount: parseFloat(mAmounts[i].value) || Math.round(budget / mTitles.length),
+            deadline: mDates[i].value || deadline,
+            status: "PENDING",
+            submissionNote: "",
+            submissionLink: "",
+            invoiceNumber: null
+          });
+        }
+      }
+
+      if (milestones.length === 0) {
+        milestones = [
+          { id: "m_" + Date.now() + "_1", title: "Phase 1: Initial Implementation", description: desc.substring(0, 60), amount: Math.round(budget * 0.5), deadline: deadline, status: "PENDING", submissionNote: "", submissionLink: "", invoiceNumber: null },
+          { id: "m_" + Date.now() + "_2", title: "Phase 2: Final Verification & Handover", description: "Deliverables testing and sign-off", amount: Math.round(budget * 0.5), deadline: deadline, status: "PENDING", submissionNote: "", submissionLink: "", invoiceNumber: null }
+        ];
+      }
+
+      const newProj = {
+        id: "p_" + Date.now(),
+        title: title,
+        budget: budget,
+        deadline: deadline,
+        status: "OPEN",
+        clientName: "Demo Client",
+        clientEmail: "client@freelanceguard.demo",
+        freelancerName: null,
+        freelancerEmail: null,
+        freelancerId: null,
+        description: desc,
+        requirements: requirements.length ? requirements : ["Core feature deliverable implementation"],
+        milestones: milestones,
+        activityLogs: [
+          { action: "Project Created", description: `${title} posted by Demo Client and open for bids`, time: "Just now" }
+        ]
+      };
+
+      const data = getAppData();
+      data.projects.unshift(newProj);
+      data.selectedProjectId = newProj.id;
+      data.notifications.unshift({
+        id: Date.now(),
+        title: "New Project Posted",
+        message: `Project '${title}' with ₹${budget.toLocaleString()} budget has been opened for freelancer bids.`,
+        time: "Just now",
+        isRead: false
+      });
+
+      saveAppData(data);
+      toggleProjectForm();
+      showFlash(`Project '${title}' posted successfully!`, "success");
+    }
+
+    // Client Actions: Fund Escrow, Approve Milestone, Request Revision
+    function fundEscrowAction(projectId) {
+      const data = getAppData();
+      const p = data.projects.find(proj => proj.id === projectId);
+      if (!p) return;
+
+      p.status = "FUNDED";
+      if (p.milestones.length > 0) {
+        p.milestones[0].status = "IN_PROGRESS";
+      }
+      p.activityLogs.unshift({
+        action: "Escrow Funded",
+        description: `Client funded simulated escrow of ₹${p.budget.toLocaleString()}`,
+        time: "Just now"
+      });
+      data.notifications.unshift({
+        id: Date.now(),
+        title: "Escrow Funded & Locked",
+        message: `Simulated escrow of ₹${p.budget.toLocaleString()} locked for '${p.title}'. Work authorized.`,
+        time: "Just now",
+        isRead: false
+      });
+      saveAppData(data);
+      showFlash(`Escrow of ₹${p.budget.toLocaleString()} successfully funded and locked!`, "success");
+    }
+
+    function approveMilestoneAction(milestoneId) {
+      const data = getAppData();
+      let targetMilestone = null;
+      let targetProject = null;
+
+      for (let p of data.projects) {
+        const m = p.milestones.find(item => item.id === milestoneId);
+        if (m) {
+          targetMilestone = m;
+          targetProject = p;
+          break;
+        }
+      }
+      if (!targetMilestone || !targetProject) return;
+
+      targetMilestone.status = "RELEASED";
+      const gross = targetMilestone.amount;
+      const fee = gross * 0.10;
+      const net = gross * 0.90;
+      const invNum = "INV-2026-" + Math.floor(1000 + Math.random() * 9000);
+      targetMilestone.invoiceNumber = invNum;
+
+      // Create Invoice
+      const newInv = {
+        id: "inv_" + Date.now(),
+        invoiceNumber: invNum,
+        projectTitle: targetProject.title,
+        milestoneTitle: targetMilestone.title,
+        clientName: targetProject.clientName,
+        clientEmail: targetProject.clientEmail,
+        freelancerName: targetProject.freelancerName || "Piyush",
+        freelancerEmail: targetProject.freelancerEmail || "piyushsrivastava488@gmail.com",
+        grossAmount: gross,
+        platformFee: fee,
+        freelancerAmount: net,
+        status: "PAID",
+        createdAt: new Date().toISOString().split('T')[0]
+      };
+      data.invoices.unshift(newInv);
+
+      // Unlock next milestone if present
+      const mIdx = targetProject.milestones.findIndex(m => m.id === milestoneId);
+      if (mIdx + 1 < targetProject.milestones.length) {
+        if (targetProject.milestones[mIdx + 1].status === "PENDING") {
+          targetProject.milestones[mIdx + 1].status = "IN_PROGRESS";
+        }
+      } else {
+        // All milestones completed
+        const allDone = targetProject.milestones.every(m => m.status === "RELEASED");
+        if (allDone) targetProject.status = "COMPLETED";
+      }
+
+      targetProject.activityLogs.unshift({
+        action: "Milestone Approved & Released",
+        description: `Approved '${targetMilestone.title}'. ₹${net.toLocaleString()} net paid to freelancer.`,
+        time: "Just now"
+      });
+
+      data.notifications.unshift({
+        id: Date.now(),
+        title: "Milestone Payout Released",
+        message: `Client approved deliverable. ₹${net.toLocaleString()} net payout released (Invoice ${invNum}).`,
+        time: "Just now",
+        isRead: false
+      });
+
+      saveAppData(data);
+      showFlash(`Deliverable approved! ₹${net.toLocaleString()} net paid to freelancer. Invoice ${invNum} generated!`, "success");
+    }
+
+    function openRevisionModal(milestoneId, title) {
+      document.getElementById("revisionMilestoneId").value = milestoneId;
+      document.getElementById("revisionModalTitle").innerText = "Milestone: " + title;
+      document.getElementById("revisionNote").value = "";
+      document.getElementById("revisionModalOverlay").classList.add("active");
+    }
+
+    function closeRevisionModal() {
+      document.getElementById("revisionModalOverlay").classList.remove("active");
+    }
+
+    function handleSendRevision(e) {
+      e.preventDefault();
+      const milestoneId = document.getElementById("revisionMilestoneId").value;
+      const note = document.getElementById("revisionNote").value.trim();
+      const data = getAppData();
+
+      for (let p of data.projects) {
+        const m = p.milestones.find(item => item.id === milestoneId);
+        if (m) {
+          m.status = "REVISION_REQUESTED";
+          m.submissionNote = "Revision Request: " + note;
+          p.activityLogs.unshift({
+            action: "Revision Requested",
+            description: `Client requested revision for '${m.title}': ${note}`,
+            time: "Just now"
+          });
+          data.notifications.unshift({
+            id: Date.now(),
+            title: "Revision Requested",
+            message: `Client requested changes on milestone '${m.title}'.`,
+            time: "Just now",
+            isRead: false
+          });
+          break;
+        }
+      }
+      saveAppData(data);
+      closeRevisionModal();
+      showFlash("Revision request sent to freelancer.", "warning");
+    }
+
+    // Freelancer Actions: Accept Project, Submit Deliverables
+    function acceptProjectAction(projectId) {
+      const data = getAppData();
+      const p = data.projects.find(proj => proj.id === projectId);
+      if (!p) return;
+
+      p.status = "ACCEPTED";
+      p.freelancerId = "f1";
+      p.freelancerName = "Piyush";
+      p.freelancerEmail = "piyushsrivastava488@gmail.com";
+      p.activityLogs.unshift({
+        action: "Contract Accepted",
+        description: `Piyush accepted contract '${p.title}'`,
+        time: "Just now"
+      });
+      data.notifications.unshift({
+        id: Date.now(),
+        title: "Contract Accepted",
+        message: `Piyush accepted contract for '${p.title}'. Awaiting client escrow deposit.`,
+        time: "Just now",
+        isRead: false
+      });
+      data.selectedProjectId = p.id;
+      saveAppData(data);
+      showFlash(`Contract accepted for '${p.title}'! Client will fund escrow next.`, "success");
+    }
+
+    function handleSubmitMilestone(e, milestoneId) {
+      e.preventDefault();
+      const form = e.target;
+      const note = form.querySelector(".sub-note").value.trim();
+      const link = form.querySelector(".sub-link").value.trim();
+
+      const data = getAppData();
+      for (let p of data.projects) {
+        const m = p.milestones.find(item => item.id === milestoneId);
+        if (m) {
+          m.status = "SUBMITTED";
+          m.submissionNote = note;
+          m.submissionLink = link;
+          p.activityLogs.unshift({
+            action: "Deliverable Submitted",
+            description: `Deliverable submitted for '${m.title}'`,
+            time: "Just now"
+          });
+          data.notifications.unshift({
+            id: Date.now(),
+            title: "Deliverable Submitted",
+            message: `Freelancer submitted work for '${m.title}'. Ready for client review.`,
+            time: "Just now",
+            isRead: false
+          });
+          break;
+        }
+      }
+      saveAppData(data);
+      showFlash("Deliverable submitted successfully! Client has been notified for review.", "success");
+    }
+
+    function selectActiveProject(projectId, targetTab = "client") {
+      const data = getAppData();
+      data.selectedProjectId = projectId;
+      saveAppData(data);
+      switchTab(targetTab);
+    }
+
+    function deleteProjectAction(projectId) {
+      if (!confirm("Are you sure you want to delete this open project request?")) return;
+      const data = getAppData();
+      data.projects = data.projects.filter(p => p.id !== projectId);
+      if (data.selectedProjectId === projectId) {
+        data.selectedProjectId = data.projects.length > 0 ? data.projects[0].id : null;
+      }
+      saveAppData(data);
+      showFlash("Project request deleted.", "info");
+    }
+
+    // Invoice View Modal
+    function openInvoiceModal(invId) {
+      const data = getAppData();
+      const inv = data.invoices.find(i => i.id === invId || i.invoiceNumber === invId);
+      if (!inv) return;
+
+      const content = document.getElementById("invoiceModalContent");
+      content.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 1.25rem; border-bottom: 2px solid var(--border-color); margin-bottom: 1.25rem;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="font-size: 1.5rem; font-weight: 800; color: #0f172a; letter-spacing: -0.02em;">Freelance<span style="color: #2563eb;">Guard</span></span>
+            </div>
+            <p style="font-size: 0.78rem; color: #64748b; margin-top: 0.2rem;">Official Escrow Settlement & Tax Receipt</p>
+          </div>
+          <div style="text-align: right;">
+            <h2 style="font-size: 1.6rem; font-weight: 800; color: #2563eb; letter-spacing: -0.02em; margin: 0;">INVOICE</h2>
+            <div style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin-top: 0.15rem;">${inv.invoiceNumber}</div>
+            <div style="font-size: 0.82rem; color: #64748b; margin-top: 0.15rem;">Date: ${inv.createdAt}</div>
+            <div style="margin-top: 0.35rem;">
+              <span class="badge badge-funded" style="font-size: 0.72rem; padding: 0.15rem 0.55rem;">STATUS: ${inv.status}</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 1.25rem;">
+          <div>
+            <div style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.3rem;">Billed To (Client):</div>
+            <div style="font-size: 1rem; font-weight: 800; color: #0f172a;">${inv.clientName}</div>
+            <div style="font-size: 0.85rem; color: #64748b;">${inv.clientEmail}</div>
+          </div>
+          <div>
+            <div style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.3rem;">Paid To (Freelancer):</div>
+            <div style="font-size: 1rem; font-weight: 800; color: #0f172a;">${inv.freelancerName}</div>
+            <div style="font-size: 0.85rem; color: #64748b;">${inv.freelancerEmail}</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 1.25rem; background: #f8fafc; padding: 0.8rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+          <div style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.2rem;">Project Contract:</div>
+          <div style="font-size: 1.05rem; font-weight: 800; color: #0f172a;">${inv.projectTitle}</div>
+          <div style="font-size: 0.85rem; color: #475569; margin-top: 0.15rem;">Approved Deliverable: <strong>${inv.milestoneTitle}</strong></div>
+        </div>
+
+        <div style="margin-bottom: 1.25rem;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background: #f8fafc; border-bottom: 2px solid var(--border-color); text-align: left; font-size: 0.78rem; color: #64748b; text-transform: uppercase;">
+                <th style="padding: 0.65rem 0.85rem;">Description</th>
+                <th style="padding: 0.65rem 0.85rem; text-align: right;">Amount (₹)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom: 1px solid var(--border-color); font-size: 0.88rem;">
+                <td style="padding: 0.7rem 0.85rem; font-weight: 600;">Gross Milestone Deliverable Value</td>
+                <td style="padding: 0.7rem 0.85rem; text-align: right; font-weight: 700;">₹${inv.grossAmount.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+              </tr>
+              <tr style="border-bottom: 1px solid var(--border-color); color: #64748b; font-size: 0.86rem;">
+                <td style="padding: 0.7rem 0.85rem;">Less: Platform Service Fee (10%)</td>
+                <td style="padding: 0.7rem 0.85rem; text-align: right; color: #dc2626; font-weight: 600;">- ₹${inv.platformFee.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+              </tr>
+              <tr style="background: #ecfdf5; font-size: 1.02rem;">
+                <td style="padding: 0.8rem; font-weight: 800; color: #065f46;">Net Freelancer Payout (90%)</td>
+                <td style="padding: 0.8rem; text-align: right; font-weight: 800; color: #059669;">₹${inv.freelancerAmount.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      `;
+      document.getElementById("invoiceModalOverlay").classList.add("active");
+    }
+
+    function closeInvoiceModal() {
+      document.getElementById("invoiceModalOverlay").classList.remove("active");
+    }
+
+    // Core Render Engine
+    function renderApp() {
+      const data = getAppData();
+      const activeProj = data.projects.find(p => p.id === data.selectedProjectId) || data.projects[0];
+
+      // 1. Notification Center
+      const unreadCount = data.notifications.filter(n => !n.isRead).length;
+      const notifBadge = document.getElementById("notifBadge");
+      const notifDropdownCount = document.getElementById("notifDropdownCount");
+      const notifList = document.getElementById("notifList");
+
+      if (unreadCount > 0) {
+        notifBadge.style.display = "flex";
+        notifBadge.innerText = unreadCount;
+        notifDropdownCount.innerText = `${unreadCount} unread`;
+      } else {
+        notifBadge.style.display = "none";
+        notifDropdownCount.innerText = "0 unread";
+      }
+
+      notifList.innerHTML = data.notifications.length === 0 ? `
+        <div style="padding: 1.5rem; text-align: center; color: #94a3b8; font-size: 0.85rem;">No notifications right now.</div>
+      ` : data.notifications.map(n => `
+        <div class="notif-item ${n.isRead ? '' : 'notif-unread'}" style="padding: 0.85rem 1.1rem; border-bottom: 1px solid #f1f5f9; display: flex; gap: 0.75rem; align-items: flex-start; background: ${n.isRead ? '#ffffff' : '#f8fafc'};">
+          <div style="width: 8px; height: 8px; border-radius: 50%; background: ${n.isRead ? '#cbd5e1' : '#2563eb'}; margin-top: 0.45rem; flex-shrink: 0;"></div>
+          <div style="flex: 1;">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.2rem; gap: 0.5rem;">
+              <span style="font-weight: 700; font-size: 0.84rem; color: #0f172a;">${n.title}</span>
+              <span style="font-size: 0.7rem; color: #64748b; font-weight: 600;">${n.time}</span>
+            </div>
+            <p style="font-size: 0.78rem; color: #64748b; margin: 0; line-height: 1.45;">${n.message}</p>
+          </div>
+        </div>
+      `).join('');
+
+      // 2. Metrics Calculation
+      const totalProjects = data.projects.length;
+      const activeProjectsCount = data.projects.filter(p => ['ACCEPTED', 'FUNDED', 'IN_PROGRESS'].includes(p.status)).length;
+      const completedProjectsCount = data.projects.filter(p => p.status === 'COMPLETED').length;
+      const totalBudgetSpent = data.projects.reduce((sum, p) => sum + (['FUNDED', 'IN_PROGRESS', 'COMPLETED'].includes(p.status) ? p.budget : 0), 0);
+      const totalReleasedNet = data.invoices.reduce((sum, i) => sum + i.freelancerAmount, 0);
+      const totalFees = data.invoices.reduce((sum, i) => sum + i.platformFee, 0);
+
+      document.getElementById("metricTotalProjects").innerText = totalProjects;
+      document.getElementById("metricActiveProjects").innerText = activeProjectsCount;
+      document.getElementById("metricCompletedProjects").innerText = completedProjectsCount;
+      document.getElementById("metricEscrowSpent").innerText = `₹${totalBudgetSpent.toLocaleString('en-IN')}`;
+      document.getElementById("freelancerTotalEarnings").innerText = `₹${totalReleasedNet.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+      document.getElementById("clientProjectBadgeCount").innerText = `${totalProjects} Projects`;
+
+      // 3. Client Tab: Escrow Top Banner
+      const clientEscrowBanner = document.getElementById("clientEscrowBanner");
+      if (activeProj) {
+        const releasedAmount = activeProj.milestones.filter(m => m.status === 'RELEASED').reduce((s, m) => s + m.amount, 0);
+        const remainingEscrow = Math.max(0, activeProj.budget - releasedAmount);
+
+        if (activeProj.status === 'ACCEPTED') {
+          clientEscrowBanner.innerHTML = `
+            <div class="escrow-vault-card" style="margin-bottom: 2rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.25rem;">
+                <div>
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <h2 style="font-size: 1.3rem; font-weight: 800; color: white;">Simulated Escrow Deposit Required</h2>
+                    <span class="badge" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a;">Action Needed</span>
+                  </div>
+                  <p style="color: #94a3b8; font-size: 0.88rem; margin-top: 0.25rem;">
+                    Freelancer <strong style="color: white;">${activeProj.freelancerName}</strong> accepted this contract. Fund simulated escrow to authorize work.
+                  </p>
+                  <div style="display: flex; gap: 0.85rem; margin-top: 0.75rem; flex-wrap: wrap;">
+                    <div class="escrow-stat-box">
+                      <span style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: 600;">Total Deposit</span>
+                      <strong style="font-size: 1.05rem; color: white; display: block;">₹${activeProj.budget.toLocaleString('en-IN', {minimumFractionDigits: 2})}</strong>
+                    </div>
+                    <div class="escrow-stat-box">
+                      <span style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: 600;">Freelancer Net (90%)</span>
+                      <strong style="font-size: 1.05rem; color: #4ade80; display: block;">₹${(activeProj.budget * 0.90).toLocaleString('en-IN', {minimumFractionDigits: 2})}</strong>
+                    </div>
+                    <div class="escrow-stat-box">
+                      <span style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: 600;">Platform Fee (10%)</span>
+                      <strong style="font-size: 1.05rem; color: #f59e0b; display: block;">₹${(activeProj.budget * 0.10).toLocaleString('en-IN', {minimumFractionDigits: 2})}</strong>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <button type="button" onclick="fundEscrowAction('${activeProj.id}')" class="btn btn-primary" style="padding: 0.8rem 1.6rem; font-size: 0.92rem; font-weight: 700;">
+                    <span>Fund Simulated Escrow (₹${activeProj.budget.toLocaleString('en-IN')}) &rarr;</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+        } else if (['FUNDED', 'IN_PROGRESS', 'COMPLETED'].includes(activeProj.status)) {
+          clientEscrowBanner.innerHTML = `
+            <div class="escrow-vault-card locked" style="margin-bottom: 2rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.25rem;">
+                <div>
+                  <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+                    <h2 style="font-size: 1.25rem; font-weight: 800; color: white;">
+                      ${activeProj.status === 'COMPLETED' ? 'Simulated Escrow: 100% Completed & Paid' : 'Simulated Escrow: Locked & Secured'}
+                    </h2>
+                    <span class="badge" style="background: rgba(255, 255, 255, 0.1); color: #4ade80; border: 1px solid rgba(255, 255, 255, 0.2);">${activeProj.status}</span>
+                    <span class="badge" style="background: rgba(255, 255, 255, 0.05); color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.15);">Selected: ${activeProj.title}</span>
+                  </div>
+                  <p style="color: #94a3b8; font-size: 0.86rem; margin-top: 0.25rem;">
+                    Escrow vault for <strong style="color: white;">${activeProj.title}</strong> with total contract budget of <strong style="color: #4ade80;">₹${activeProj.budget.toLocaleString('en-IN', {minimumFractionDigits: 2})}</strong>.
+                  </p>
+                </div>
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                  <div class="escrow-stat-box" style="text-align: right; min-width: 220px;">
+                    <span style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: 600;">Remaining Vault Escrow</span>
+                    <strong style="font-size: 1.35rem; color: #4ade80; display: block;">₹${remainingEscrow.toLocaleString('en-IN', {minimumFractionDigits: 2})}</strong>
+                    <div style="font-size: 0.74rem; color: #94a3b8; margin-top: 0.15rem;">
+                      Released: ₹${releasedAmount.toLocaleString('en-IN', {minimumFractionDigits: 2})} / ₹${activeProj.budget.toLocaleString('en-IN', {minimumFractionDigits: 2})}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        } else {
+          clientEscrowBanner.innerHTML = "";
+        }
+      }
+
+      // 4. Client Project Grid
+      const clientProjectGrid = document.getElementById("clientProjectGrid");
+      clientProjectGrid.innerHTML = data.projects.map(p => {
+        const isSel = activeProj && activeProj.id === p.id;
+        return `
+          <div class="project-card-item ${isSel ? 'is-active' : ''}">
+            <div>
+              <div class="project-card-header">
+                <h3 class="project-card-title">${p.title}</h3>
+                <span class="badge badge-${p.status.toLowerCase()}" style="white-space: nowrap;">${p.status}</span>
+              </div>
+              <div class="project-card-stats">
+                <div>
+                  <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; display: block;">Budget</span>
+                  <strong style="font-size: 1.05rem; color: #0f172a; font-weight: 800;">₹${p.budget.toLocaleString('en-IN', {minimumFractionDigits: 2})}</strong>
+                </div>
+                <div style="text-align: right;">
+                  <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; display: block;">Freelancer</span>
+                  <span style="font-size: 0.85rem; font-weight: 700; color: #334155;">${p.freelancerName || '<span style="color: #b45309;">Awaiting</span>'}</span>
+                </div>
+              </div>
+            </div>
+            <div class="project-card-actions">
+              <button type="button" onclick="selectActiveProject('${p.id}', 'client')" class="btn ${isSel ? 'btn-primary' : 'btn-secondary'}" style="flex: 1; padding: 0.45rem 0.75rem; font-size: 0.84rem; justify-content: center;">
+                ${isSel ? 'Currently Selected' : 'Manage & Review &rarr;'}
+              </button>
+              ${p.status === 'OPEN' ? `
+                <button type="button" onclick="deleteProjectAction('${p.id}')" title="Delete Project Request" style="background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; border-radius: var(--radius-sm); padding: 0.45rem 0.65rem; font-weight: 700; font-size: 0.8rem; cursor: pointer;">
+                  Delete
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // 5. Client Active Workspace Detail
+      const clientActiveWorkspaceArea = document.getElementById("clientActiveWorkspaceArea");
+      if (activeProj) {
+        clientActiveWorkspaceArea.innerHTML = `
+          <div class="grid-2" style="margin-bottom: 2rem;">
+            <!-- Left Column: Milestones Review -->
+            <div class="card">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                <div>
+                  <h2 style="font-size: 1.2rem; font-weight: 800; color: #0f172a;">Milestones & Deliverable Review</h2>
+                  <p style="font-size: 0.82rem; color: var(--text-muted);">Contract: <strong style="color: #334155;">${activeProj.title}</strong></p>
+                </div>
+                <span class="badge badge-${activeProj.status.toLowerCase()}">${activeProj.status}</span>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 1rem;">
+                ${activeProj.milestones.map(m => `
+                  <div class="milestone-item-box status-${m.status.toLowerCase()}">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; gap: 0.5rem;">
+                      <div>
+                        <h3 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin: 0 0 0.35rem;">${m.title}</h3>
+                        <div style="font-size: 0.85rem; color: #475569; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                          <span>Gross Value: <strong style="color: #0f172a; font-weight: 800;">₹${m.amount.toLocaleString('en-IN', {minimumFractionDigits: 2})}</strong></span>
+                          <span style="color: #cbd5e1;">•</span>
+                          <span style="background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; padding: 0.15rem 0.55rem; border-radius: 5px; font-weight: 800; font-size: 0.82rem;">Net Payout (90%): ₹${(m.amount * 0.90).toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                        </div>
+                      </div>
+                      <span class="badge badge-${m.status.toLowerCase()}">${m.status}</span>
+                    </div>
+
+                    ${m.status === 'SUBMITTED' ? `
+                      <div style="background: #ffffff; border: 1.5px solid #2563eb; border-radius: var(--radius-sm); padding: 1.15rem; margin-top: 0.85rem; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                          <strong style="color: #0f172a; font-size: 0.88rem;">Freelancer Deliverable Submission</strong>
+                          <span class="badge badge-open" style="font-size: 0.68rem; padding: 0.15rem 0.55rem;">Ready for Review</span>
+                        </div>
+                        <p style="color: #1e293b; font-size: 0.88rem; margin-bottom: 0.75rem; background: #f8fafc; padding: 0.75rem; border-radius: 6px; border: 1px solid #e2e8f0; line-height: 1.45;">
+                          ${m.submissionNote}
+                        </p>
+                        ${m.submissionLink ? `
+                          <div style="margin-bottom: 0.85rem;">
+                            <a href="${m.submissionLink}" target="_blank" style="color: #2563eb; font-size: 0.86rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                              <span>Open Deliverable Work Link &rarr;</span>
+                            </a>
+                          </div>
+                        ` : ''}
+                        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color);">
+                          <button type="button" onclick="approveMilestoneAction('${m.id}')" class="btn btn-success" style="padding: 0.55rem 1.3rem; font-size: 0.88rem;">
+                            Approve & Release 90% Net (₹${(m.amount * 0.90).toLocaleString('en-IN', {minimumFractionDigits: 2})})
+                          </button>
+                          <button type="button" class="btn btn-warning" onclick="openRevisionModal('${m.id}', '${m.title}')" style="padding: 0.55rem 1.1rem; font-size: 0.88rem;">
+                            Request Revision
+                          </button>
+                        </div>
+                      </div>
+                    ` : ''}
+
+                    ${m.status === 'RELEASED' ? `
+                      <div class="milestone-released-banner" style="margin-top: 0.75rem;">
+                        <div class="released-title">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                          <span>Approved & Released! Paid: <strong style="color: #14532d;">₹${(m.amount * 0.90).toLocaleString('en-IN', {minimumFractionDigits: 2})}</strong> <span class="fee-pill">10% Protocol Fee: ₹${(m.amount * 0.10).toLocaleString('en-IN', {minimumFractionDigits: 2})}</span></span>
+                        </div>
+                        ${m.invoiceNumber ? `
+                          <button type="button" onclick="openInvoiceModal('${m.invoiceNumber}')" class="btn-invoice">
+                            <span>View Invoice #${m.invoiceNumber}</span> &rarr;
+                          </button>
+                        ` : ''}
+                      </div>
+                    ` : ''}
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            <!-- Right Column: Freelancer Card & Activity Log -->
+            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+              <div class="card">
+                <h2 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin-bottom: 0.85rem;">Contract Freelancer</h2>
+                <div>
+                  <strong style="color: #0f172a; font-size: 1rem; display: block;">
+                    ${activeProj.freelancerName || '<span class="badge" style="background: #fffbeb; color: #b45309;">Awaiting Freelancer</span>'}
+                  </strong>
+                  <span style="color: var(--text-muted); font-size: 0.84rem;">${activeProj.freelancerEmail || 'Open for bids'}</span>
+                </div>
+              </div>
+
+              <div class="card" style="flex: 1;">
+                <h2 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin-bottom: 0.85rem;">Escrow Audit Timeline</h2>
+                <div class="timeline" style="max-height: 320px; overflow-y: auto;">
+                  ${activeProj.activityLogs.map(log => `
+                    <div class="timeline-item">
+                      <div class="timeline-marker"></div>
+                      <div style="font-size: 0.85rem; font-weight: 700; color: #0f172a;">${log.action}</div>
+                      <div style="font-size: 0.8rem; color: #64748b;">${log.description}</div>
+                      <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.15rem;">${log.time}</div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // 6. Freelancer Tab Rendering
+      const myContracts = data.projects.filter(p => p.freelancerId === "f1");
+      const openProjects = data.projects.filter(p => p.status === 'OPEN');
+
+      document.getElementById("freelancerMyContractsBadge").innerText = `${myContracts.length} Contracts`;
+      document.getElementById("freelancerOpenBadge").innerText = `${openProjects.length} Open`;
+
+      const freelancerMyContractsGrid = document.getElementById("freelancerMyContractsGrid");
+      freelancerMyContractsGrid.innerHTML = myContracts.length === 0 ? `
+        <div style="text-align: center; padding: 2.5rem 1rem; color: var(--text-muted); font-size: 0.9rem; grid-column: 1/-1;">
+          You haven't accepted any contracts yet. Accept one from the <strong>Open Projects</strong> on the right.
+        </div>
+      ` : myContracts.map(p => {
+        const isSel = activeProj && activeProj.id === p.id;
+        return `
+          <div class="project-card-item ${isSel ? 'is-active' : ''}">
+            <div>
+              <div class="project-card-header">
+                <h3 class="project-card-title">${p.title}</h3>
+                <span class="badge badge-${p.status.toLowerCase()}">${p.status}</span>
+              </div>
+              <div class="project-card-stats">
+                <div>
+                  <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; display: block;">Your 90% Net</span>
+                  <strong style="font-size: 1.05rem; color: #059669; font-weight: 800;">₹${(p.budget * 0.90).toLocaleString('en-IN', {minimumFractionDigits: 2})}</strong>
+                </div>
+                <div style="text-align: right;">
+                  <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; display: block;">Client</span>
+                  <span style="font-size: 0.85rem; font-weight: 700; color: #334155;">${p.clientName}</span>
+                </div>
+              </div>
+            </div>
+            <div class="project-card-actions">
+              <button type="button" onclick="selectActiveProject('${p.id}', 'freelancer')" class="btn ${isSel ? 'btn-primary' : 'btn-secondary'}" style="width: 100%; padding: 0.45rem 0.75rem; font-size: 0.84rem; justify-content: center;">
+                ${isSel ? 'Active Workspace' : 'Manage / Submit Deliverables &rarr;'}
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      const freelancerOpenProjectsList = document.getElementById("freelancerOpenProjectsList");
+      freelancerOpenProjectsList.innerHTML = openProjects.length === 0 ? `
+        <div style="text-align: center; padding: 2rem 0.5rem; color: var(--text-muted); font-size: 0.84rem;">
+          No open projects awaiting acceptance right now.
+        </div>
+      ` : openProjects.map(p => `
+        <div style="border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.95rem; background: var(--bg-card-subtle); display: flex; flex-direction: column; gap: 0.45rem;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.4rem;">
+            <h4 style="font-size: 0.92rem; font-weight: 700; color: #0f172a; margin: 0;">${p.title}</h4>
+            <span class="badge badge-open" style="font-size: 0.65rem; padding: 0.12rem 0.45rem;">OPEN</span>
+          </div>
+          <p style="font-size: 0.78rem; color: #64748b; margin: 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+            ${p.description}
+          </p>
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; padding-top: 0.45rem; border-top: 1px solid var(--border-color); margin-top: 0.15rem;">
+            <span style="color: var(--text-muted); font-size: 0.76rem;">Client: <strong style="color: #0f172a;">${p.clientName}</strong></span>
+            <strong style="color: #059669; font-size: 0.88rem;">₹${p.budget.toLocaleString('en-IN')}</strong>
+          </div>
+          <button type="button" onclick="acceptProjectAction('${p.id}')" class="btn btn-primary" style="width: 100%; padding: 0.45rem 0.65rem; font-size: 0.8rem; font-weight: 700; margin-top: 0.2rem;">
+            Accept Contract &rarr;
+          </button>
+        </div>
+      `).join('');
+
+      // Freelancer Active Workspace Area
+      const freelancerActiveWorkspaceArea = document.getElementById("freelancerActiveWorkspaceArea");
+      if (activeProj && activeProj.freelancerId === "f1") {
+        freelancerActiveWorkspaceArea.innerHTML = `
+          <div class="card" style="margin-bottom: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+              <div>
+                <h2 style="font-size: 1.25rem; font-weight: 800; color: #0f172a;">Active Contract Workspace: ${activeProj.title}</h2>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">Client: <strong style="color: #334155;">${activeProj.clientName}</strong></p>
+              </div>
+              <div style="text-align: right;">
+                <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; display: block;">Your 90% Net Payout</span>
+                <strong style="font-size: 1.35rem; color: #059669; font-weight: 800;">₹${(activeProj.budget * 0.90).toLocaleString('en-IN', {minimumFractionDigits: 2})}</strong>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+              ${activeProj.milestones.map(m => `
+                <div class="milestone-item-box status-${m.status.toLowerCase()}">
+                  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; gap: 0.5rem;">
+                    <div>
+                      <h3 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin: 0 0 0.35rem;">${m.title}</h3>
+                      <div style="font-size: 0.85rem; color: #475569; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                        <span style="background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; padding: 0.15rem 0.55rem; border-radius: 5px; font-weight: 800; font-size: 0.82rem;">Milestone Net (90%): ₹${(m.amount * 0.90).toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                        <span style="color: #cbd5e1;">•</span>
+                        <span>Gross Value: <strong style="color: #0f172a; font-weight: 800;">₹${m.amount.toLocaleString('en-IN', {minimumFractionDigits: 2})}</strong></span>
+                      </div>
+                    </div>
+                    <span class="badge badge-${m.status.toLowerCase()}">${m.status}</span>
+                  </div>
+
+                  ${['IN_PROGRESS', 'REVISION_REQUESTED'].includes(m.status) ? `
+                    <form onsubmit="handleSubmitMilestone(event, '${m.id}')" style="margin-top: 0.85rem; padding-top: 0.85rem; border-top: 1px solid var(--border-color);">
+                      <div style="margin-bottom: 0.65rem;">
+                        <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.25rem; color: #0f172a;">Deliverable Submission Notes / Summary *</label>
+                        <textarea class="sub-note" rows="2" required placeholder="Describe what you built or revised for this milestone..." style="width: 100%; padding: 0.65rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.88rem; font-family: inherit; outline: none;"></textarea>
+                      </div>
+                      <div style="margin-bottom: 0.85rem;">
+                        <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.25rem; color: #0f172a;">Work Link (GitHub Repository / Live Demo / Figma)</label>
+                        <input type="url" class="sub-link" placeholder="https://github.com/demo/repo" style="width: 100%; padding: 0.65rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.88rem; outline: none;">
+                      </div>
+                      <button type="submit" class="btn btn-primary" style="padding: 0.6rem 1.4rem; font-size: 0.88rem;">
+                        Submit Deliverable for Client Review &rarr;
+                      </button>
+                    </form>
+                  ` : ''}
+
+                  ${m.status === 'SUBMITTED' ? `
+                    <div style="background: #ffffff; border: 1.5px solid #2563eb; border-radius: var(--radius-sm); padding: 1rem; margin-top: 0.75rem; font-size: 0.88rem; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);">
+                      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                        <strong style="color: #0f172a;">Submitted for Client Review:</strong>
+                        <span class="badge badge-open" style="font-size: 0.68rem; padding: 0.15rem 0.55rem;">In Review</span>
+                      </div>
+                      <p style="color: #334155; margin: 0.25rem 0 0.5rem; background: #f8fafc; padding: 0.65rem; border-radius: 6px; border: 1px solid #e2e8f0;">${m.submissionNote}</p>
+                      ${m.submissionLink ? `
+                        <a href="${m.submissionLink}" target="_blank" style="color: #2563eb; font-weight: 700; font-size: 0.86rem; display: inline-flex; align-items: center; gap: 0.35rem; text-decoration: none;">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                          <span>Open Link &rarr;</span>
+                        </a>
+                      ` : ''}
+                    </div>
+                  ` : ''}
+
+                  ${m.status === 'RELEASED' ? `
+                    <div class="milestone-released-banner" style="margin-top: 0.75rem;">
+                      <div class="released-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                        <span>Approved by Client! Payout: <strong style="color: #14532d;">₹${(m.amount * 0.90).toLocaleString('en-IN', {minimumFractionDigits: 2})}</strong> released.</span>
+                      </div>
+                      ${m.invoiceNumber ? `
+                        <button type="button" onclick="openInvoiceModal('${m.invoiceNumber}')" class="btn-invoice">
+                          <span>View Invoice #${m.invoiceNumber}</span> &rarr;
+                        </button>
+                      ` : ''}
+                    </div>
+                  ` : ''}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } else {
+        freelancerActiveWorkspaceArea.innerHTML = "";
+      }
+
+      // 7. Escrow Tab: Formula & Invoices
+      document.getElementById("escrowStatCommitted").innerText = `₹${totalBudgetSpent.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+      document.getElementById("escrowStatReleased").innerText = `₹${totalReleasedNet.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+      document.getElementById("escrowStatFee").innerText = `₹${totalFees.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+      document.getElementById("escrowInvoicesBadgeCount").innerText = `${data.invoices.length} Invoices`;
+
+      const escrowInvoicesList = document.getElementById("escrowInvoicesList");
+      escrowInvoicesList.innerHTML = data.invoices.length === 0 ? `
+        <p style="color: var(--text-muted); padding: 1.75rem 0; text-align: center; font-size: 0.9rem;">No invoices generated yet. Invoices generate automatically once milestone deliverables are approved.</p>
+      ` : data.invoices.map(inv => `
+        <div style="border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1.25rem; background: var(--bg-card-subtle);">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.85rem;">
+            <div>
+              <strong style="font-size: 1.05rem; color: #0f172a;">${inv.invoiceNumber}</strong>
+              <span style="color: var(--text-muted); font-size: 0.84rem; margin-left: 0.5rem;">Date: ${inv.createdAt}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <span class="badge badge-funded">STATUS: ${inv.status}</span>
+              <button type="button" onclick="openInvoiceModal('${inv.id}')" class="btn btn-secondary" style="padding: 0.35rem 0.85rem; font-size: 0.8rem; font-weight: 700;">
+                View & Print &rarr;
+              </button>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; background: white; padding: 0.9rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.86rem;">
+            <div>
+              <span style="color: var(--text-muted); font-size: 0.74rem; display: block; font-weight: 600; text-transform: uppercase;">Milestone Deliverable</span>
+              <strong style="color: #0f172a;">${inv.milestoneTitle}</strong>
+            </div>
+            <div>
+              <span style="color: var(--text-muted); font-size: 0.74rem; display: block; font-weight: 600; text-transform: uppercase;">Gross Value</span>
+              <strong style="color: #0f172a;">₹${inv.grossAmount.toLocaleString('en-IN', {minimumFractionDigits: 2})}</strong>
+            </div>
+            <div>
+              <span style="color: var(--text-muted); font-size: 0.74rem; display: block; font-weight: 600; text-transform: uppercase;">10% Platform Fee</span>
+              <strong style="color: #dc2626;">- ₹${inv.platformFee.toLocaleString('en-IN', {minimumFractionDigits: 2})}</strong>
+            </div>
+            <div>
+              <span style="color: var(--text-muted); font-size: 0.74rem; display: block; font-weight: 600; text-transform: uppercase;">90% Net Freelancer Payout</span>
+              <strong style="color: #16a34a; font-size: 1rem;">₹${inv.freelancerAmount.toLocaleString('en-IN', {minimumFractionDigits: 2})}</strong>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Init on load
+    window.addEventListener("DOMContentLoaded", () => {
+      const data = getAppData();
+      renderApp();
+      switchTab(data.activeTab || "client");
+    });
+  </script>
+</body>
+</html>

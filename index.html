@@ -498,14 +498,15 @@
        CLIENT-SIDE FULL APP ENGINE (LOCALSTORAGE PERSISTENCE)
        ========================================================================= -->
   <script>
-    // Initial Seed Data
+    // Initial Seed Data (Universal Default State across all devices)
     const INITIAL_DATA = {
       activeTab: "client",
       selectedProjectId: "p1",
       notifications: [
         { id: 1, title: "Deliverable Ready for Review", message: "Freelancer Piyush submitted deliverable for Phase 1: Authentication & Database Architecture.", time: "10 mins ago", isRead: false },
-        { id: 2, title: "Escrow Locked & Funded", message: "Client funded ₹10,000 for Mobile Food Delivery App.", time: "1 hour ago", isRead: false },
-        { id: 3, title: "Contract Accepted", message: "Piyush accepted Mobile Food Delivery App project contract.", time: "2 hours ago", isRead: true }
+        { id: 2, title: "Escrow Locked & Funded", message: "Client funded ₹15,000 simulated escrow for FinTech Dashboard with Escrow.", time: "45 mins ago", isRead: false },
+        { id: 3, title: "Contract Accepted", message: "Piyush accepted FinTech Dashboard with Escrow project contract.", time: "1 hour ago", isRead: true },
+        { id: 4, title: "Escrow Locked & Funded", message: "Client funded ₹10,000 for Mobile Food Delivery App.", time: "2 hours ago", isRead: true }
       ],
       projects: [
         {
@@ -563,9 +564,9 @@
           ],
           activityLogs: [
             { action: "Deliverable Submitted", description: "Piyush submitted Phase 1 for client review", time: "10m ago" },
-            { action: "Escrow Funded", description: "Client funded ₹10,000 into simulated escrow vault", time: "1h ago" },
-            { action: "Contract Accepted", description: "Piyush accepted project contract", time: "2h ago" },
-            { action: "Project Created", description: "Mobile Food Delivery App posted by Demo Client", time: "3h ago" }
+            { action: "Escrow Funded", description: "Client funded ₹10,000 into simulated escrow vault", time: "2h ago" },
+            { action: "Contract Accepted", description: "Piyush accepted project contract", time: "3h ago" },
+            { action: "Project Created", description: "Mobile Food Delivery App posted by Demo Client", time: "4h ago" }
           ]
         },
         {
@@ -573,12 +574,12 @@
           title: "FinTech Dashboard with Escrow",
           budget: 15000,
           deadline: "2026-11-15",
-          status: "OPEN",
+          status: "FUNDED",
           clientName: "Demo Client",
           clientEmail: "client@freelanceguard.demo",
-          freelancerName: null,
-          freelancerEmail: null,
-          freelancerId: null,
+          freelancerName: "Piyush",
+          freelancerEmail: "piyushsrivastava488@gmail.com",
+          freelancerId: "f1",
           description: "Executive analytics dashboard displaying transactional escrow volume, fee collection metrics, and dispute resolution workflows.",
           requirements: [
             "Chart.js interactive metric widgets",
@@ -592,7 +593,7 @@
               description: "Design and implement dashboard metrics and revenue trends.",
               amount: 7500,
               deadline: "2026-11-05",
-              status: "PENDING",
+              status: "IN_PROGRESS",
               submissionNote: "",
               submissionLink: "",
               invoiceNumber: null
@@ -610,6 +611,8 @@
             }
           ],
           activityLogs: [
+            { action: "Escrow Funded", description: "Client funded ₹15,000 into simulated escrow vault", time: "45m ago" },
+            { action: "Contract Accepted", description: "Piyush accepted FinTech Dashboard contract", time: "1h ago" },
             { action: "Project Created", description: "FinTech Dashboard posted and opened for bids", time: "5h ago" }
           ]
         },
@@ -647,6 +650,51 @@
             { action: "Deliverable Submitted", description: "Piyush submitted Gemini integration", time: "1d ago" },
             { action: "Escrow Funded", description: "Client funded ₹8,000", time: "2d ago" }
           ]
+        },
+        {
+          id: "p4",
+          title: "Budget Management Website",
+          budget: 12000,
+          deadline: "2026-11-30",
+          status: "OPEN",
+          clientName: "Demo Client",
+          clientEmail: "client@freelanceguard.demo",
+          freelancerName: null,
+          freelancerEmail: null,
+          freelancerId: null,
+          description: "Personal and enterprise budget tracking tool with income/expense categorizer, goal planner, and automated weekly expenditure summaries.",
+          requirements: [
+            "Income and expense tracking ledger",
+            "Monthly savings goal milestone tracker",
+            "Printable expense report generator"
+          ],
+          milestones: [
+            {
+              id: "m7",
+              title: "Phase 1: Expense Tracking & Category Models",
+              description: "Database models and responsive ledger interface.",
+              amount: 6000,
+              deadline: "2026-11-15",
+              status: "PENDING",
+              submissionNote: "",
+              submissionLink: "",
+              invoiceNumber: null
+            },
+            {
+              id: "m8",
+              title: "Phase 2: Analytics & Report Export",
+              description: "Interactive visual charts and PDF report export.",
+              amount: 6000,
+              deadline: "2026-11-30",
+              status: "PENDING",
+              submissionNote: "",
+              submissionLink: "",
+              invoiceNumber: null
+            }
+          ],
+          activityLogs: [
+            { action: "Project Created", description: "Budget Management Website posted and open for bids", time: "Just now" }
+          ]
         }
       ],
       invoices: [
@@ -669,12 +717,13 @@
     };
 
     // State Management in LocalStorage (Permanent Persistence)
-    const STORAGE_KEY = "freelanceguard_live_state";
+    const STORAGE_KEY = "freelanceguard_device_state_v3";
 
     function getAppData() {
-      // Clear any obsolete test keys
+      // Clear obsolete old version keys
       localStorage.removeItem("freelanceguard_static_state_v1");
       localStorage.removeItem("freelanceguard_static_state_v2");
+      localStorage.removeItem("freelanceguard_live_state");
 
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
